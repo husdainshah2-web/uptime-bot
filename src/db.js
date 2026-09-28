@@ -108,82 +108,63 @@ function init() {
     console.log(`✅ Default admin created: ${username} / ${password}`);
   }
 
+  prepareQueries();
   console.log('✅ Database initialized successfully');
   return db;
 }
 
-// Helper functions
-const queries = {
-  // Monitors
-  getAllMonitors: db.prepare('SELECT * FROM monitors ORDER BY created_at DESC'),
-  getActiveMonitors: db.prepare('SELECT * FROM monitors WHERE is_active = 1 AND is_paused = 0'),
-  getMonitorById: db.prepare('SELECT * FROM monitors WHERE id = ?'),
-  insertMonitor: db.prepare(`
+const queries = {};
+
+function prepareQueries() {
+  queries.getAllMonitors = db.prepare('SELECT * FROM monitors ORDER BY created_at DESC');
+  queries.getActiveMonitors = db.prepare('SELECT * FROM monitors WHERE is_active = 1 AND is_paused = 0');
+  queries.getMonitorById = db.prepare('SELECT * FROM monitors WHERE id = ?');
+  queries.insertMonitor = db.prepare(`
     INSERT INTO monitors (id, name, url, method, interval_minutes, timeout_seconds, expected_status)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `),
-  updateMonitor: db.prepare(`
-    UPDATE monitors SET name = ?, url = ?, method = ?, interval_minutes = ?, 
+  `);
+  queries.updateMonitor = db.prepare(`
+    UPDATE monitors SET name = ?, url = ?, method = ?, interval_minutes = ?,
     timeout_seconds = ?, expected_status = ?, updated_at = datetime('now')
     WHERE id = ?
-  `),
-  pauseMonitor: db.prepare('UPDATE monitors SET is_paused = 1, updated_at = datetime(\'now\') WHERE id = ?'),
-  resumeMonitor: db.prepare('UPDATE monitors SET is_paused = 0, updated_at = datetime(\'now\') WHERE id = ?'),
-  deleteMonitor: db.prepare('DELETE FROM monitors WHERE id = ?'),
-
-  // Checks
-  insertCheck: db.prepare(`
+  `);
+  queries.pauseMonitor = db.prepare("UPDATE monitors SET is_paused = 1, updated_at = datetime('now') WHERE id = ?");
+  queries.resumeMonitor = db.prepare("UPDATE monitors SET is_paused = 0, updated_at = datetime('now') WHERE id = ?");
+  queries.deleteMonitor = db.prepare('DELETE FROM monitors WHERE id = ?');
+  queries.insertCheck = db.prepare(`
     INSERT INTO checks (id, monitor_id, status_code, response_time_ms, is_up, error_message, checked_at)
     VALUES (?, ?, ?, ?, ?, ?, ?)
-  `),
-  getChecksByMonitor: db.prepare(`
-    SELECT * FROM checks WHERE monitor_id = ? ORDER BY checked_at DESC LIMIT ?
-  `),
-  getRecentChecks: db.prepare(`
+  `);
+  queries.getChecksByMonitor = db.prepare('SELECT * FROM checks WHERE monitor_id = ? ORDER BY checked_at DESC LIMIT ?');
+  queries.getRecentChecks = db.prepare(`
     SELECT * FROM checks WHERE monitor_id = ? AND checked_at >= datetime('now', ?)
     ORDER BY checked_at ASC
-  `),
-  getLastCheck: db.prepare(`
-    SELECT * FROM checks WHERE monitor_id = ? ORDER BY checked_at DESC LIMIT 1
-  `),
-
-  // Incidents
-  insertIncident: db.prepare(`
+  `);
+  queries.getLastCheck = db.prepare('SELECT * FROM checks WHERE monitor_id = ? ORDER BY checked_at DESC LIMIT 1');
+  queries.insertIncident = db.prepare(`
     INSERT INTO incidents (id, monitor_id, started_at, status_code, error_message)
     VALUES (?, ?, ?, ?, ?)
-  `),
-  closeIncident: db.prepare(`
+  `);
+  queries.closeIncident = db.prepare(`
     UPDATE incidents SET ended_at = ?, duration_seconds = ?
     WHERE id = ? AND ended_at IS NULL
-  `),
-  getOpenIncident: db.prepare(`
+  `);
+  queries.getOpenIncident = db.prepare(`
     SELECT * FROM incidents WHERE monitor_id = ? AND ended_at IS NULL ORDER BY started_at DESC LIMIT 1
-  `),
-  getIncidentsByMonitor: db.prepare(`
-    SELECT * FROM incidents WHERE monitor_id = ? ORDER BY started_at DESC LIMIT ?
-  `),
-
-  // Alerts
-  insertAlert: db.prepare(`
-    INSERT INTO alerts (id, monitor_id, type, message) VALUES (?, ?, ?, ?)
-  `),
-  getAlerts: db.prepare(`
+  `);
+  queries.getIncidentsByMonitor = db.prepare('SELECT * FROM incidents WHERE monitor_id = ? ORDER BY started_at DESC LIMIT ?');
+  queries.insertAlert = db.prepare('INSERT INTO alerts (id, monitor_id, type, message) VALUES (?, ?, ?, ?)');
+  queries.getAlerts = db.prepare(`
     SELECT a.*, m.name as monitor_name FROM alerts a
     JOIN monitors m ON a.monitor_id = m.id
     ORDER BY a.created_at DESC LIMIT ?
-  `),
-
-  // Stats helpers
-  getUptimeStats: db.prepare(`
-    SELECT 
-      COUNT(*) as total,
-      SUM(is_up) as up_count
-    FROM checks 
+  `);
+  queries.getUptimeStats = db.prepare(`
+    SELECT COUNT(*) as total, SUM(is_up) as up_count
+    FROM checks
     WHERE monitor_id = ? AND checked_at >= datetime('now', ?)
-  `),
-
-  // Users
-  getUserByUsername: db.prepare('SELECT * FROM users WHERE username = ?'),
-};
+  `);
+  queries.getUserByUsername = db.prepare('SELECT * FROM users WHERE username = ?');
+}
 
 module.exports = { db, init, queries };
