@@ -1,0 +1,27 @@
+{
+  "name": "uptime-bot",
+  "version": "1.0.0",
+  "description": "Full-featured Uptime Monitoring Bot + Dashboard built with Node.js",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "init-db": "node -e \"require('./src/db').init()\""
+  },
+  "keywords": ["uptime", "monitor", "dashboard", "nodejs"],
+  "author": "Grok",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "better-sqlite3": "^11.7.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "node-cron": "^3.0.3",
+    "uuid": "^11.0.3"
+  }
+}

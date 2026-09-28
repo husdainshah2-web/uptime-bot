@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uptime Bot — Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    body { font-family: 'Inter', system-ui, sans-serif; }
+    .status-dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+    .status-up { background: #22c55e; box-shadow: 0 0 8px #22c55e88; }
+    .status-down { background: #ef4444; box-shadow: 0 0 8px #ef444488; }
+    .status-paused { background: #94a3b8; }
+    .status-unknown { background: #f59e0b; }
+    .card { transition: transform 0.15s, box-shadow 0.15s; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.12); }
+    .sidebar-link.active { background: #1e293b; color: white; }
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen">
+
+  <!-- LOGIN SCREEN -->
+  <div id="login-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950">
+    <div class="w-full max-w-md p-8 bg-slate-900 rounded-2xl border border-slate-800 shadow-2xl">
+      <div class="text-center mb-8">
+        <div class="inline-flex items-center justify-center w-16 h-16 rounded-2xl bg-emerald-500/10 mb-4">
+          <svg class="w-8 h-8 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        </div>
+        <h1 class="text-2xl font-bold">Uptime Bot</h1>
+        <p class="text-slate-400 mt-1">Sign in to your monitoring dashboard</p>
+      </div>
+      <form id="login-form" class="space-y-4">
+        <div>
+          <label class="block text-sm text-slate-400 mb-1">Username</label>
+          <input type="text" id="login-user" value="admin" class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+        </div>
+        <div>
+          <label class="block text-sm text-slate-400 mb-1">Password</label>
+          <input type="password" id="login-pass" value="admin123" class="w-full px-4 py-2.5 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+        </div>
+        <p id="login-error" class="text-red-400 text-sm hidden"></p>
+        <button type="submit" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium transition">Sign In</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- MAIN APP -->
+  <div id="app" class="hidden flex min-h-screen">
+    <!-- Sidebar -->
+    <aside class="w-64 bg-slate-900 border-r border-slate-800 flex flex-col shrink-0">
+      <div class="p-5 border-b border-slate-800">
+        <div class="flex items-center gap-3">
+          <div class="w-9 h-9 rounded-lg bg-emerald-500/20 flex items-center justify-center">
+            <svg class="w-5 h-5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+          </div>
+          <span class="font-bold text-lg">Uptime Bot</span>
+        </div>
+      </div>
+      <nav class="flex-1 p-3 space-y-1">
+        <a href="#" data-page="dashboard" class="sidebar-link active flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium hover:bg-slate-800 transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1h-2z"/></svg>
+          Dashboard
+        </a>
+        <a href="#" data-page="monitors" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          Monitors
+        </a>
+        <a href="#" data-page="incidents" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+          Incidents
+        </a>
+        <a href="#" data-page="alerts" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+          Alerts
+        </a>
+        <a href="#" data-page="logs" class="sidebar-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-400 hover:bg-slate-800 hover:text-white transition">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+          Check Logs
+        </a>
+      </nav>
+      <div class="p-4 border-t border-slate-800">
+        <button id="logout-btn" class="w-full text-left text-sm text-slate-400 hover:text-white flex items-center gap-2">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+          Logout
+        </button>
+      </div>
+    </aside>
+
+    <!-- Content -->
+    <main class="flex-1 overflow-auto">
+      <header class="sticky top-0 z-10 bg-slate-950/80 backdrop-blur border-b border-slate-800 px-6 py-4 flex items-center justify-between">
+        <div>
+          <h2 id="page-title" class="text-xl font-semibold">Dashboard</h2>
+          <p id="page-subtitle" class="text-sm text-slate-400">Overview of all monitors</p>
+        </div>
+        <button id="add-monitor-btn" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg text-sm font-medium flex items-center gap-2 transition">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+          Add Website
+        </button>
+      </header>
+
+      <div id="content" class="p-6">
+        <!-- Dynamic content injected here -->
+      </div>
+    </main>
+  </div>
+
+  <!-- ADD / EDIT MODAL -->
+  <div id="modal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div class="bg-slate-900 border border-slate-700 rounded-2xl w-full max-w-lg mx-4 shadow-2xl">
+      <div class="px-6 py-4 border-b border-slate-800 flex items-center justify-between">
+        <h3 id="modal-title" class="font-semibold text-lg">Add Website</h3>
+        <button id="modal-close" class="text-slate-400 hover:text-white">&times;</button>
+      </div>
+      <form id="monitor-form" class="p-6 space-y-4">
+        <div>
+          <label class="block text-sm text-slate-400 mb-1">Name</label>
+          <input type="text" id="m-name" placeholder="Artist Studio" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+        </div>
+        <div>
+          <label class="block text-sm text-slate-400 mb-1">URL</label>
+          <input type="url" id="m-url" placeholder="https://example.com" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-500" required />
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-slate-400 mb-1">Method</label>
+            <select id="m-method" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg">
+              <option>GET</option>
+              <option>HEAD</option>
+              <option>POST</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-sm text-slate-400 mb-1">Interval (min)</label>
+            <input type="number" id="m-interval" value="4" min="1" max="60" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg" />
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm text-slate-400 mb-1">Timeout (sec)</label>
+            <input type="number" id="m-timeout" value="20" min="5" max="120" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg" />
+          </div>
+          <div>
+            <label class="block text-sm text-slate-400 mb-1">Expected Status</label>
+            <input type="number" id="m-status" value="200" class="w-full px-3 py-2 bg-slate-800 border border-slate-700 rounded-lg" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-3 pt-2">
+          <button type="button" id="modal-cancel" class="px-4 py-2 text-slate-400 hover:text-white">Cancel</button>
+          <button type="submit" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 rounded-lg font-medium">Create Monitor</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
