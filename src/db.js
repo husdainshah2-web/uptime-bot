@@ -109,26 +109,26 @@ function init() {
   }
 
   prepareQueries();
-
-  const monitorCount = db.prepare('SELECT COUNT(*) as count FROM monitors').get().count;
-  if (monitorCount === 0) {
-    queries.insertMonitor.run(
-      uuidv4(),
-      'Artist Studio',
-      'https://artist-studio-web.onrender.com',
-      'GET',
-      4,
-      20,
-      200
-    );
-    console.log('✅ Default monitor added: Artist Studio');
-  }
+  seedDefaultMonitors();
 
   console.log('✅ Database initialized successfully');
   return db;
 }
 
 const queries = {};
+
+function ensureMonitor(name, url) {
+  const existing = db.prepare('SELECT id FROM monitors WHERE url = ?').get(url);
+  if (existing) return;
+  queries.insertMonitor.run(uuidv4(), name, url, 'GET', 2, 20, 200);
+  console.log(`✅ Monitor added: ${name}`);
+}
+
+function seedDefaultMonitors() {
+  ensureMonitor('Artist Studio', 'https://artist-studio-web.onrender.com');
+  ensureMonitor('Uptime Bot', 'https://uptime-bot-lg8w.onrender.com/health');
+  ensureMonitor('Uptime Dashboard', 'https://uptime-dashboard-79rf.onrender.com/health');
+}
 
 function prepareQueries() {
   queries.getAllMonitors = db.prepare('SELECT * FROM monitors ORDER BY created_at DESC');

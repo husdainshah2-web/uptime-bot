@@ -29,7 +29,7 @@ app.get('*', (req, res) => {
 
 // Start
 init();
-startScheduler(parseInt(process.env.CHECK_INTERVAL_MINUTES) || 4);
+startScheduler(parseInt(process.env.CHECK_INTERVAL_MINUTES) || 2);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`
