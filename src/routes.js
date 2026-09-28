@@ -1,26 +1,12 @@
 const express = require('express');
 const { v4: uuidv4 } = require('uuid');
 const { queries, db } = require('./db');
-const { login, authMiddleware } = require('./auth');
 const { checkMonitor } = require('./checker');
 
 const router = express.Router();
 
-// ============ AUTH ============
-router.post('/auth/login', (req, res) => {
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ error: 'Username and password required' });
-  }
-  const result = login(username, password);
-  if (!result) {
-    return res.status(401).json({ error: 'Invalid credentials' });
-  }
-  res.json(result);
-});
-
 // ============ DASHBOARD OVERVIEW ============
-router.get('/dashboard', authMiddleware, (req, res) => {
+router.get('/dashboard', (req, res) => {
   const monitors = queries.getAllMonitors.all();
 
   let up = 0, down = 0, paused = 0;
@@ -95,12 +81,12 @@ router.get('/dashboard', authMiddleware, (req, res) => {
 });
 
 // ============ MONITORS CRUD ============
-router.get('/monitors', authMiddleware, (req, res) => {
+router.get('/monitors', (req, res) => {
   const monitors = queries.getAllMonitors.all();
   res.json(monitors);
 });
 
-router.post('/monitors', authMiddleware, (req, res) => {
+router.post('/monitors', (req, res) => {
   const { name, url, method = 'GET', interval_minutes = 4, timeout_seconds = 20, expected_status = 200 } = req.body;
 
   if (!name || !url) {
@@ -123,7 +109,7 @@ router.post('/monitors', authMiddleware, (req, res) => {
   res.status(201).json({ id, name, url, message: 'Monitor created' });
 });
 
-router.get('/monitors/:id', authMiddleware, (req, res) => {
+router.get('/monitors/:id', (req, res) => {
   const monitor = queries.getMonitorById.get(req.params.id);
   if (!monitor) return res.status(404).json({ error: 'Monitor not found' });
 
@@ -170,7 +156,7 @@ router.get('/monitors/:id', authMiddleware, (req, res) => {
   });
 });
 
-router.put('/monitors/:id', authMiddleware, (req, res) => {
+router.put('/monitors/:id', (req, res) => {
   const monitor = queries.getMonitorById.get(req.params.id);
   if (!monitor) return res.status(404).json({ error: 'Monitor not found' });
 
@@ -188,23 +174,23 @@ router.put('/monitors/:id', authMiddleware, (req, res) => {
   res.json({ message: 'Monitor updated' });
 });
 
-router.post('/monitors/:id/pause', authMiddleware, (req, res) => {
+router.post('/monitors/:id/pause', (req, res) => {
   queries.pauseMonitor.run(req.params.id);
   res.json({ message: 'Monitor paused' });
 });
 
-router.post('/monitors/:id/resume', authMiddleware, (req, res) => {
+router.post('/monitors/:id/resume', (req, res) => {
   queries.resumeMonitor.run(req.params.id);
   res.json({ message: 'Monitor resumed' });
 });
 
-router.delete('/monitors/:id', authMiddleware, (req, res) => {
+router.delete('/monitors/:id', (req, res) => {
   queries.deleteMonitor.run(req.params.id);
   res.json({ message: 'Monitor deleted' });
 });
 
 // Force check now
-router.post('/monitors/:id/check', authMiddleware, async (req, res) => {
+router.post('/monitors/:id/check', async (req, res) => {
   const monitor = queries.getMonitorById.get(req.params.id);
   if (!monitor) return res.status(404).json({ error: 'Monitor not found' });
 
@@ -217,13 +203,13 @@ router.post('/monitors/:id/check', authMiddleware, async (req, res) => {
 });
 
 // ============ ALERTS & INCIDENTS ============
-router.get('/alerts', authMiddleware, (req, res) => {
+router.get('/alerts', (req, res) => {
   const limit = parseInt(req.query.limit) || 50;
   const alerts = queries.getAlerts.all(limit);
   res.json(alerts);
 });
 
-router.get('/incidents', authMiddleware, (req, res) => {
+router.get('/incidents', (req, res) => {
   const incidents = db.prepare(`
     SELECT i.*, m.name as monitor_name, m.url
     FROM incidents i
@@ -235,7 +221,7 @@ router.get('/incidents', authMiddleware, (req, res) => {
 });
 
 // ============ LOGS ============
-router.get('/logs', authMiddleware, (req, res) => {
+router.get('/logs', (req, res) => {
   const limit = parseInt(req.query.limit) || 100;
   const logs = db.prepare(`
     SELECT c.*, m.name as monitor_name, m.url

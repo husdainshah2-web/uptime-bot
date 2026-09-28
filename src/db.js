@@ -109,6 +109,21 @@ function init() {
   }
 
   prepareQueries();
+
+  const monitorCount = db.prepare('SELECT COUNT(*) as count FROM monitors').get().count;
+  if (monitorCount === 0) {
+    queries.insertMonitor.run(
+      uuidv4(),
+      'Artist Studio',
+      'https://artist-studio-web.onrender.com',
+      'GET',
+      4,
+      20,
+      200
+    );
+    console.log('✅ Default monitor added: Artist Studio');
+  }
+
   console.log('✅ Database initialized successfully');
   return db;
 }

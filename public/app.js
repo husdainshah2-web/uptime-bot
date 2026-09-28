@@ -1,59 +1,14 @@
 const API = '/api';
-let token = localStorage.getItem('token');
 let currentPage = 'dashboard';
 let chartInstance = null;
 
 async function api(path, options = {}) {
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
-  if (token) headers['Authorization'] = `Bearer ${token}`;
   const res = await fetch(`${API}${path}`, { ...options, headers });
-  if (res.status === 401) {
-    logout();
-    throw new Error('Unauthorized');
-  }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error || 'Request failed');
   return data;
 }
-
-function showApp() {
-  document.getElementById('login-screen').classList.add('hidden');
-  document.getElementById('app').classList.remove('hidden');
-  document.getElementById('app').classList.add('flex');
-  navigate('dashboard');
-}
-
-function logout() {
-  token = null;
-  localStorage.removeItem('token');
-  document.getElementById('app').classList.add('hidden');
-  document.getElementById('app').classList.remove('flex');
-  document.getElementById('login-screen').classList.remove('hidden');
-}
-
-document.getElementById('login-form').addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const username = document.getElementById('login-user').value;
-  const password = document.getElementById('login-pass').value;
-  const errEl = document.getElementById('login-error');
-  try {
-    const data = await api('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({ username, password }),
-    });
-    token = data.token;
-    localStorage.setItem('token', token);
-    errEl.classList.add('hidden');
-    showApp();
-  } catch (err) {
-    errEl.textContent = err.message;
-    errEl.classList.remove('hidden');
-  }
-});
-
-document.getElementById('logout-btn').addEventListener('click', logout);
-
-if (token) showApp();
 
 document.querySelectorAll('.sidebar-link').forEach(link => {
   link.addEventListener('click', (e) => {
@@ -525,6 +480,8 @@ function escapeHtml(str) {
   return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+navigate('dashboard');
+
 setInterval(() => {
-  if (currentPage === 'dashboard' && token) loadPage('dashboard');
+  if (currentPage === 'dashboard') loadPage('dashboard');
 }, 30000);
