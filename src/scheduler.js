@@ -5,7 +5,7 @@ let task = null;
 
 /**
  * Start the background scheduler.
- * Default: every 4 minutes (*/4 * * * *)
+ * Default: every 4 minutes
  */
 function startScheduler(intervalMinutes = 4) {
   if (task) {
